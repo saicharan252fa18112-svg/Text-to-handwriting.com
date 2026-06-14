@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Handwriter — Turn text into handwriting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Shadows+Into+Light&family=Homemade+Apple&family=Reenie+Beanie&family=Indie+Flower&family=Patrick+Hand&family=Architects+Daughter&family=Kalam:wght@300;400;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #faf6ee;
+    --paper-line: #cfd9e8;
+    --ink-default: #2d3142;
+    --margin-red: #d98080;
+    --accent: #8a6fd6;
+    --accent-deep: #5b4393;
+    --bg: #efe9dd;
+    --panel: #ffffff;
+    --text-main: #2d2a26;
+    --text-soft: #8a847c;
+    --border: #e3ddd1;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    min-height: 100vh;
+  }
+
+  .wrap{
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  header{
+    display:flex;
+    align-items:baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .brand{
+    font-family:'Homemade Apple', cursive;
+    font-size: 2.4rem;
+    color: var(--accent-deep);
+    line-height:1;
+  }
+
+  .tagline{
+    font-size: 0.85rem;
+    color: var(--text-soft);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items:start;
+  }
+
+  @media (max-width: 880px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+
+  .panel h2{
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-soft);
+    margin: 0 0 14px;
+    font-weight: 600;
+  }
+
+  textarea{
+    width:100%;
+    min-height: 160px;
+    resize: vertical;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--text-main);
+    background: #fbfaf7;
+  }
+  textarea:focus, select:focus, input:focus{
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .field{ margin-bottom: 18px; }
+  .field label{
+    display:block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-main);
+  }
+
+  .style-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .style-card{
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align:center;
+    cursor:pointer;
+    background:#fbfaf7;
+    transition: border-color .15s, background .15s;
+    font-size: 1.15rem;
+    color: var(--text-main);
+  }
+  .style-card span{
+    display:block;
+    font-size: 0.65rem;
+    font-family:'Space Grotesk',sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-soft);
+    margin-top: 6px;
+  }
+  .style-card.active{
+    border-color: var(--accent);
+    background: #f4f0fc;
+  }
+  .style-card:hover{ border-color: var(--accent); }
+
+  .row-2{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  select, input[type=range]{ width:100%; }
+  select{
+    border:1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: inherit;
+    background:#fbfaf7;
+    font-size: 0.85rem;
+  }
+
+  .swatches{
+    display:flex;
+    gap: 10px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .swatch{
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor:pointer;
+  }
+  .swatch.active{ border-color: var(--text-main); }
+
+  .paper-options{
+    display:flex;
+    gap:10px;
+  }
+  .paper-options label{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor:pointer;
+    margin:0;
+  }
+
+  .btn{
+    appearance:none;
+    border:none;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor:pointer;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .btn-primary{
+    background: var(--accent-deep);
+    color: #fff;
+    width:100%;
+  }
+  .btn-primary:hover{ box-shadow: 0 4px 14px rgba(91,67,147,0.35); }
+  .btn-primary:active{ transform: translateY(1px); }
+
+  .preview-wrap{
+    position: relative;
+  }
+
+  .page{
+    border-radius: 14px;
+    padding: 40px 44px;
+    position: relative;
+    overflow:hidden;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.03), 0 12px 30px -18px rgba(0,0,0,0.25);
+    box-sizing: border-box;
+    margin: 0 auto;
+  }
+
+  /* Page size presets (1mm ≈ 3.78px at 96dpi) */
+  .page.size-a4{ width: 793px; height: 1122px; }
+  .page.size-letter{ width: 816px; height: 1056px; }
+  .page.size-a5{ width: 559px; height: 793px; }
+  .page.size-legal{ width: 816px; height: 1344px; }
+
+  @media (max-width: 880px){
+    .page.size-a4, .page.size-letter, .page.size-a5, .page.size-legal{
+      width: 100%;
+      height: auto;
+      aspect-ratio: 210 / 297;
+    }
+    .page.size-letter{ aspect-ratio: 8.5 / 11; }
+    .page.size-a5{ aspect-ratio: 148 / 210; }
+    .page.size-legal{ aspect-ratio: 8.5 / 14; }
+  }
+
+  .page.lined{
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(var(--line-h) - 1px),
+      var(--paper-line) var(--line-h)
+    );
+    background-position: 0 6px;
+  }
+
+  .page.margin::before{
+    content:"";
+    position:absolute;
+    top:0; bottom:0;
+    left: 70px;
+    width: 1px;
+    background: var(--margin-red);
+    opacity: 0.55;
+  }
+
+  .page-text{
+    position:relative;
+    z-index:1;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: var(--line-h);
+    font-size: var(--font-size);
+    color: var(--ink-color);
+    margin:0;
+  }
+
+  .page.margin .page-text{ padding-left: 26px; }
+
+  .download-row{
+    display:flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .download-row .btn{ flex: 1; min-width: 160px; }
+  .btn-secondary{
+    background: #fff;
+    border: 1.5px solid var(--accent-deep);
+    color: var(--accent-deep);
+  }
+  .btn-secondary:hover{ background: #f4f0fc; }
+
+  .hint{
+    font-size: 0.78rem;
+    color: var(--text-soft);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  .page-scroll{
+    overflow-x: auto;
+    padding: 4px;
+  }
+
+  .pages-stack{
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .page-label{
+    font-size: 0.75rem;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="brand">Handwriter</div>
+      <div class="tagline">Type it. See it written. Take it with you.</div>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- CONTROLS -->
+    <div class="panel">
+      <h2>Your text</h2>
+      <div class="field">
+        <textarea id="inputText" placeholder="Start typing here… your words will appear as handwriting on the right.">Dear diary,
+
+Today felt like one of those days worth remembering.</textarea>
+      </div>
+
+      <h2>Handwriting style</h2>
+      <div class="style-grid" id="styleGrid">
+        <div class="style-card active" data-font="'Caveat', cursive" data-size="34" data-line="1.45">Aa Bb Cc<span>Casual</span></div>
+        <div class="style-card" data-font="'Shadows Into Light', cursive" data-size="26" data-line="1.7">Aa Bb Cc<span>Light Note</span></div>
+        <div class="style-card" data-font="'Homemade Apple', cursive" data-size="20" data-line="1.9">Aa Bb Cc<span>Cursive</span></div>
+        <div class="style-card" data-font="'Reenie Beanie', cursive" data-size="30" data-line="1.5">Aa Bb Cc<span>Quick Scribble</span></div>
+        <div class="style-card" data-font="'Indie Flower', cursive" data-size="24" data-line="1.7">Aa Bb Cc<span>Bubbly</span></div>
+        <div class="style-card" data-font="'Patrick Hand', cursive" data-size="24" data-line="1.7">Aa Bb Cc<span>Neat Print</span></div>
+        <div class="style-card" data-font="'Architects Daughter', cursive" data-size="22" data-line="1.7">Aa Bb Cc<span>Sketchy</span></div>
+        <div class="style-card" data-font="'Kalam', cursive" data-size="22" data-line="1.7">Aa Bb Cc<span>Marker</span></div>
+      </div>
+
+      <h2 style="margin-top:22px;">Page &amp; ink</h2>
+      <div class="row-2">
+        <div class="field">
+          <label for="pageSize">Page size</label>
+          <select id="pageSize">
+            <option value="a4" selected>A4 (210 × 297 mm)</option>
+            <option value="letter">US Letter (8.5 × 11 in)</option>
+            <option value="a5">A5 (148 × 210 mm)</option>
+            <option value="legal">Legal (8.5 × 14 in)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="paperType">Paper</label>
+          <select id="paperType">
+            <option value="plain">Plain</option>
+            <option value="lined" selected>Lined</option>
+            <option value="margin">Lined + margin</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="paperColor">Paper color</label>
+          <select id="paperColor">
+            <option value="#faf6ee" selected>Cream</option>
+            <option value="#ffffff">White</option>
+            <option value="#fdf6e3">Vintage</option>
+            <option value="#eef3f8">Cool grey</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="pageCount">Number of pages</label>
+          <select id="pageCount">
+            <option value="auto" selected>Auto (fits the text)</option>
+            <option value="1">1 page</option>
+            <option value="2">2 pages</option>
+            <option value="3">3 pages</option>
+            <option value="4">4 pages</option>
+            <option value="5">5 pages</option>
+            <option value="6">6 pages</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Ink color</label>
+        <div class="swatches">
+          <div class="swatch active" style="background:#2d3142" data-color="#2d3142" title="Charcoal"></div>
+          <div class="swatch" style="background:#1c3a8a" data-color="#1c3a8a" title="Blue ink"></div>
+          <div class="swatch" style="background:#1e5631" data-color="#1e5631" title="Green ink"></div>
+          <div class="swatch" style="background:#7a1f1f" data-color="#7a1f1f" title="Red ink"></div>
+          <div class="swatch" style="background:#5b4393" data-color="#5b4393" title="Purple ink"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="sizeRange">Text size: <span id="sizeVal"></span>px</label>
+        <input type="range" id="sizeRange" min="16" max="48" value="34">
+      </div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div>
+      <div class="panel preview-wrap">
+        <h2>Preview</h2>
+        <div class="page-scroll">
+          <div class="pages-stack" id="pagesStack"></div>
+        </div>
+
+        <div class="download-row">
+          <button class="btn btn-primary" id="downloadPng">Download as image (PNG)</button>
+          <button class="btn btn-secondary" id="downloadPdf">Download as PDF</button>
+        </div>
+        <div class="hint">Choose "Auto" to let your text flow across as many A4 pages as it needs, or pick a fixed page count (e.g. 5 or 6) — shorter text is padded with blank pages, longer text is trimmed to fit.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  const inputText = document.getElementById('inputText');
+  const pagesStack = document.getElementById('pagesStack');
+  const styleGrid = document.getElementById('styleGrid');
+  const pageSize = document.getElementById('pageSize');
+  const pageCount = document.getElementById('pageCount');
+  const paperType = document.getElementById('paperType');
+  const paperColor = document.getElementById('paperColor');
+  const sizeRange = document.getElementById('sizeRange');
+  const sizeVal = document.getElementById('sizeVal');
+  let currentFont = "'Caveat', cursive";
+  let currentLine = 1.45;
+  let currentInk = '#2d3142';
+
+  // mm dimensions for PDF export, matched to the CSS size classes
+  const PAGE_DIMENSIONS = {
+    a4:     { w: 210, h: 297 },
+    letter: { w: 215.9, h: 279.4 },
+    a5:     { w: 148, h: 210 },
+    legal:  { w: 215.9, h: 355.6 }
+  };
+
+  // Inner content box (px) at 96dpi for each page size, minus 40px/44px padding (top/bottom 40, left/right 44)
+  const PAGE_PX = {
+    a4:     { w: 793,  h: 1122 },
+    letter: { w: 816,  h: 1056 },
+    a5:     { w: 559,  h: 793  },
+    legal:  { w: 816,  h: 1344 }
+  };
+
+  function buildPageEl(){
+    const page = document.createElement('div');
+    page.className = 'page';
+    const text = document.createElement('p');
+    text.className = 'page-text';
+    page.appendChild(text);
+    return { page, text };
+  }
+
+  function applyPageStyles(page, text){
+    const size = sizeRange.value + 'px';
+    const lineH = (parseInt(sizeRange.value, 10) * currentLine) + 'px';
+
+    page.style.setProperty('--font-size', size);
+    page.style.setProperty('--line-h', lineH);
+    page.style.background = paperColor.value;
+
+    page.classList.remove('lined','margin');
+    const pt = paperType.value;
+    if(pt === 'lined') page.classList.add('lined');
+    if(pt === 'margin'){ page.classList.add('lined'); page.classList.add('margin'); }
+
+    page.classList.remove('size-a4','size-letter','size-a5','size-legal');
+    page.classList.add('size-' + pageSize.value);
+
+    text.style.fontFamily = currentFont;
+    text.style.color = currentInk;
+  }
+
+  // Split text into chunks that each fit within one page's content box.
+  function paginate(text, maxPages){
+    const dims = PAGE_PX[pageSize.value];
+    const contentW = dims.w - (44 * 2) - (paperType.value === 'margin' ? 26 : 0);
+    const contentH = dims.h - (40 * 2);
+
+    // Build a hidden measuring element matching the visible text styles
+    const measurer = document.createElement('div');
+    measurer.style.position = 'absolute';
+    measurer.style.visibility = 'hidden';
+    measurer.style.zIndex = '-1';
+    measurer.style.whiteSpace = 'pre-wrap';
+    measurer.style.wordWrap = 'break-word';
+    measurer.style.width = contentW + 'px';
+    measurer.style.fontFamily = currentFont;
+    measurer.style.fontSize = sizeRange.value + 'px';
+    measurer.style.lineHeight = (parseInt(sizeRange.value, 10) * currentLine) + 'px';
+    document.body.appendChild(measurer);
+
+    const paragraphs = text.split('\n');
+    const pages = [];
+    let current = [];
+
+    function currentHeight(extra){
+      measurer.textContent = current.concat(extra !== undefined ? [extra] : []).join('\n');
+      return measurer.offsetHeight;
+    }
+
+    for(let p = 0; p < paragraphs.length; p++){
+      const para = paragraphs[p];
+
+      // Try adding the whole paragraph first
+      if(currentHeight(para) <= contentH){
+        current.push(para);
+        continue;
+      }
+
+      // Paragraph doesn't fit as-is: split it word by word
+      const words = para.split(' ');
+      let line = '';
+      for(let w = 0; w < words.length; w++){
+        const testLine = line ? line + ' ' + words[w] : words[w];
+        const testBlock = current.concat([testLine]).join('\n');
+        measurer.textContent = testBlock;
+        if(measurer.offsetHeight <= contentH){
+          line = testLine;
+        } else {
+          // commit what we have, start a new page
+          if(line) current.push(line);
+          pages.push(current.join('\n'));
+          if(maxPages && pages.length >= maxPages){
+            document.body.removeChild(measurer);
+            return pages;
+          }
+          current = [];
+          line = words[w];
+          // edge case: single word taller than page — just push it anyway
+          measurer.textContent = line;
+          if(measurer.offsetHeight > contentH){
+            current.push(line);
+            line = '';
+          }
+        }
+      }
+      if(line) current.push(line);
+    }
+
+    if(current.length){
+      pages.push(current.join('\n'));
+    }
+    if(pages.length === 0) pages.push('');
+
+    document.body.removeChild(measurer);
+
+    // If a fixed page count is requested and we have fewer pages than that,
+    // pad with empty pages so the output always has exactly that many.
+    if(maxPages){
+      while(pages.length < maxPages) pages.push('');
+      if(pages.length > maxPages) pages.length = maxPages;
+    }
+    return pages;
+  }
+
+  let pageEls = [];
+
+  function render(){
+    const text = inputText.value || '';
+    const requested = pageCount.value;
+    const maxPages = requested === 'auto' ? null : parseInt(requested, 10);
+
+    const chunks = paginate(text, maxPages);
+
+    pagesStack.innerHTML = '';
+    pageEls = [];
+
+    chunks.forEach((chunk, i) => {
+      const wrapper = document.createElement('div');
+
+      if(chunks.length > 1){
+        const label = document.createElement('div');
+        label.className = 'page-label';
+        label.textContent = 'Page ' + (i + 1) + ' of ' + chunks.length;
+        wrapper.appendChild(label);
+      }
+
+      const { page, text: textEl } = buildPageEl();
+      applyPageStyles(page, textEl);
+      textEl.textContent = chunk;
+
+      wrapper.appendChild(page);
+      pagesStack.appendChild(wrapper);
+      pageEls.push(page);
+    });
+
+    sizeVal.textContent = sizeRange.value;
+  }
+
+  inputText.addEventListener('input', render);
+  pageSize.addEventListener('change', render);
+  pageCount.addEventListener('change', render);
+  paperType.addEventListener('change', render);
+  paperColor.addEventListener('change', render);
+  sizeRange.addEventListener('input', render);
+
+  styleGrid.querySelectorAll('.style-card').forEach(card => {
+    card.addEventListener('click', () => {
+      styleGrid.querySelectorAll('.style-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      currentFont = card.dataset.font;
+      currentLine = parseFloat(card.dataset.line);
+      sizeRange.value = card.dataset.size;
+      render();
+    });
+  });
+
+  document.querySelectorAll('.swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      currentInk = sw.dataset.color;
+      render();
+    });
+  });
+
+  // Initial render after fonts load
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(render);
+  }
+  render();
+
+  // Downloads
+  document.getElementById('downloadPng').addEventListener('click', async () => {
+    for(let i = 0; i < pageEls.length; i++){
+      const canvas = await html2canvas(pageEls[i], { scale: 2, backgroundColor: null });
+      const link = document.createElement('a');
+      link.download = pageEls.length > 1 ? `handwriting-page-${i + 1}.png` : 'handwriting.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      // small delay so multiple downloads don't get blocked by the browser
+      await new Promise(r => setTimeout(r, 250));
+    }
+  });
+
+  document.getElementById('downloadPdf').addEventListener('click', async () => {
+    const { jsPDF } = window.jspdf;
+    const dims = PAGE_DIMENSIONS[pageSize.value];
+    const orientation = dims.w > dims.h ? 'l' : 'p';
+    const pdf = new jsPDF(orientation, 'mm', [dims.w, dims.h]);
+
+    for(let i = 0; i < pageEls.length; i++){
+      const canvas = await html2canvas(pageEls[i], { scale: 2, backgroundColor: null });
+      const imgData = canvas.toDataURL('image/png');
+      if(i > 0) pdf.addPage([dims.w, dims.h], orientation);
+      pdf.addImage(imgData, 'PNG', 0, 0, dims.w, dims.h);
+    }
+
+    pdf.save('handwriting.pdf');
+  });
+</script>
+</body>
+</html>
